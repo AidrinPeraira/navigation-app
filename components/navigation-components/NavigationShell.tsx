@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import SearchBar from "./SearchBar";
-import RouteSidebar from "./RouteSidebar";
+import RouteSidebar from "@/components/navigation-components/RouteSidebar";
 
 export type LocationInput = {
   id: string;
