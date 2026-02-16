@@ -28,7 +28,7 @@ export default function FloatingCard() {
 
           <div className="w-full h-full">
             <MapContainer />
-            <GpsButton />
+            {/* <GpsButton /> */}
           </div>
         </Card>
       </div>

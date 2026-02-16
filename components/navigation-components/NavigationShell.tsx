@@ -3,27 +3,43 @@
 import { useState } from "react";
 import SearchBar from "./SearchBar";
 import RouteSidebar from "./RouteSidebar";
+import PlaceSidebar from "./PlaceSidebar";
+
+export type UiMode =
+  | "idle"
+  | "searching"
+  | "place-selected"
+  | "routing"
+  | "navigating";
 
 export default function NavigationShell() {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [mode, setMode] = useState<UiMode>("idle");
+
+  function handleSearch() {
+    setMode("searching");
+  }
+
+  function handlePlaceSelected() {
+    setMode("place-selected");
+  }
 
   return (
     <>
-      <SearchBar onFocus={() => setShowSidebar(true)} />
+      <SearchBar handleSearch={handleSearch} />
 
-      {showSidebar && (
+      {mode === "place-selected" && (
+        <PlaceSidebar
+          onShowDirections={() => setMode("routing")}
+          onStartNavigation={() => setMode("navigating")}
+        />
+      )}
+
+      {(mode === "routing" || mode === "navigating") && (
         <RouteSidebar
-          isNavigating={isNavigating}
-          onStart={() => {
-            setIsNavigating(true);
-            setShowSidebar(false);
-          }}
-          onEnd={() => {
-            setIsNavigating(false);
-            setShowSidebar(true);
-          }}
-          onCollapse={() => setShowSidebar(false)}
+          isNavigating={mode === "navigating"}
+          onStart={() => setMode("navigating")}
+          onEnd={() => setMode("routing")}
+          onCollapse={() => setMode("idle")}
         />
       )}
     </>

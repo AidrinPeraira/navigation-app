@@ -14,6 +14,7 @@
         - Route Sidebar: For adding and removing stops before navigation starts
         - Saved ROutes Drop Down - To add a whole route to be used later (Saving locations should work similarly. This projects allows saving entire routes only)
         - Search Bar: Obviously! :)
+        - Place Side Bar: Sow details about locatoin selected
 
 # Step 2: Create a custom hook for the map instance in the client
 
