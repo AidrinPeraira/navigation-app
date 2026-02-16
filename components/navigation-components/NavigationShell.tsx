@@ -2,42 +2,28 @@
 
 import { useState } from "react";
 import SearchBar from "./SearchBar";
-import RouteSidebar from "@/components/navigation-components/RouteSidebar";
-
-export type LocationInput = {
-  id: string;
-  value: string;
-};
+import RouteSidebar from "./RouteSidebar";
 
 export default function NavigationShell() {
   const [showSidebar, setShowSidebar] = useState(false);
-
-  const [origin, setOrigin] = useState<LocationInput>({
-    id: crypto.randomUUID(),
-    value: "",
-  });
-
-  const [destination, setDestination] = useState<LocationInput>({
-    id: crypto.randomUUID(),
-    value: "",
-  });
-
-  const [stops, setStops] = useState<LocationInput[]>([]);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   return (
     <>
-      {/* Top Search */}
       <SearchBar onFocus={() => setShowSidebar(true)} />
 
-      {/* Sidebar */}
       {showSidebar && (
         <RouteSidebar
-          origin={origin}
-          destination={destination}
-          stops={stops}
-          setOrigin={setOrigin}
-          setDestination={setDestination}
-          setStops={setStops}
+          isNavigating={isNavigating}
+          onStart={() => {
+            setIsNavigating(true);
+            setShowSidebar(false);
+          }}
+          onEnd={() => {
+            setIsNavigating(false);
+            setShowSidebar(true);
+          }}
+          onCollapse={() => setShowSidebar(false)}
         />
       )}
     </>
