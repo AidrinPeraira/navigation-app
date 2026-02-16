@@ -1,9 +1,10 @@
 import { HexagonBackground } from "@/components/animate-ui/components/backgrounds/hexagon";
+import FloatingCard from "@/components/navigation-components/FloatingCard";
 
 export default function Page() {
   return (
     <div>
-      <h1>Hello World</h1>
+      <FloatingCard />
     </div>
   );
 }
