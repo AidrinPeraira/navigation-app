@@ -1,15 +1,15 @@
+import GpsButton from "@/components/navigation-components/GpsButton";
 import MapContainer from "@/components/navigation-components/MapContainer";
 import NavigationShell from "@/components/navigation-components/NavigationShell";
+import MapProvider from "@/components/navigation-context/map-provider";
 import { Card } from "@/components/ui/card";
 
 export default function FloatingCard() {
   return (
-    /* Reduced padding on mobile (p-2) to give the card more room.
-       Changed min-h-screen to h-screen on mobile to prevent scrolling issues.
-    */
-    <div className="flex items-center justify-center h-screen md:min-h-screen p-2 md:p-6">
-      <Card
-        className="
+    <MapProvider>
+      <div className="flex items-center justify-center h-screen md:min-h-screen p-2 md:p-6">
+        <Card
+          className="
         relative 
         w-full 
         max-w-6xl 
@@ -21,16 +21,17 @@ export default function FloatingCard() {
         backdrop-blur-xl 
         shadow-2xl 
         rounded-2xl"
-      >
-        {/* Top Controls - adjusted padding for smaller screens */}
-        <div className="absolute top-6 left-6 z-20">
-          <NavigationShell />
-        </div>
-        {/* Map - ensured it fills the relative container */}
-        <div className="w-full h-full">
-          <MapContainer />
-        </div>
-      </Card>
-    </div>
+        >
+          <div className="absolute top-6 left-6 z-20">
+            <NavigationShell />
+          </div>
+
+          <div className="w-full h-full">
+            <MapContainer />
+            <GpsButton />
+          </div>
+        </Card>
+      </div>
+    </MapProvider>
   );
 }

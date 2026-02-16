@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { ModeToggle } from "@/components/theme-toggle";
 import { HexagonBackground } from "@/components/animate-ui/components/backgrounds/hexagon";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
