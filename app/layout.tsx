@@ -41,9 +41,23 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <HexagonBackground className="min-h-screen">
-            <main className="relative z-10">{children}</main>
-          </HexagonBackground>
+          <main
+            className="
+            absolute
+            mx-auto
+            z-10
+            left-0 right-0 
+            w-[95vw]
+            sm:w-[90vw]
+            md:w-[720px]
+            lg:w-[960px]
+            xl:w-[1200px]
+            2xl:w-[1400px]
+          "
+          >
+            {children}
+          </main>
+          <HexagonBackground className="min-h-screen" />
           <ModeToggle />
         </ThemeProvider>
       </body>

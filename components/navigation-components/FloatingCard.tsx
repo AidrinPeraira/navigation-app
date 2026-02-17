@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 export default function FloatingCard() {
   return (
     <MapProvider>
-      <div className="flex items-center justify-center h-screen md:min-h-screen p-2 md:p-6">
+      <div className="inline items-center justify-center h-screen md:min-h-screen p-2 md:p-6">
         <Card
           className="
         relative 
