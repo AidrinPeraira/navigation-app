@@ -37,4 +37,10 @@
                 display: none !important;
             }
 
-    -
+# Handling Searching for a place via search bar
+
+    - send a request with the search query in a the right format with public key in the url as given in the documentation
+    - the query is set by search bar.
+    - navigation shell reads it and makes api request to route.ts
+    - it then renders the right component
+    - two types of submit: 1. Select from suggestions, 2. Enter to show closest
