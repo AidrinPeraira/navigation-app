@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { PlaceData } from "@/types/DataType";
+import { ChevronLeft } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
   onShowDirections: () => void;
@@ -14,9 +16,11 @@ export default function PlaceSidebar({
   onStartNavigation,
   place,
 }: Props) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div
-      className="
+      className={`
         fixed z-30
         left-4 bottom-4
         md:top-24 md:left-6 md:bottom-auto
@@ -27,9 +31,32 @@ export default function PlaceSidebar({
         border border-white/10
         shadow-xl
         flex flex-col gap-3
-      "
+        transition-transform duration-300 ease-in-out
+
+        ${
+          collapsed
+            ? "translate-y-[calc(100%-3.5rem)] md:-translate-x-[calc(100%-3.5rem)]"
+            : "translate-x-0 translate-y-0"
+        }
+      `}
     >
-      <h3 className="font-semibold">Selected Place</h3>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Selected Place</h3>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label="Toggle panel"
+        >
+          <ChevronLeft
+            className={`h-4 w-4 transition-transform ${
+              collapsed ? "rotate-180 md:rotate-0" : "md:rotate-180"
+            }`}
+          />
+        </Button>
+      </div>
 
       <div>
         <p className="text-sm font-medium">{place?.text}</p>

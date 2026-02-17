@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SearchBar from "./SearchBar";
 import RouteSidebar from "./RouteSidebar";
 import PlaceSidebar from "./PlaceSidebar";
 import { PlaceData } from "@/types/DataType";
 import { useSearchParams } from "next/navigation";
+import { useMapbox } from "@/components/navigation-context/map-context";
 
 export type UiMode =
   | "idle"
@@ -18,39 +19,37 @@ export default function NavigationShell() {
   const [mode, setMode] = useState<UiMode>("idle");
   const [places, setPlaces] = useState<PlaceData[]>([]);
   const [open, setOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<PlaceData | null>(null);
+
+  const { selectedPlaces, setSelectedPlaces } = useMapbox();
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const params = useSearchParams();
   const query = params.get("q") ?? "";
   const submit = params.get("submit");
 
-  //reacting to search changes
   useEffect(() => {
     if (!query) {
       setPlaces([]);
-      setSelectedPlace(null);
+      setSelectedPlaces([]);
       setOpen(false);
       return;
     }
 
     setMode("searching");
-    //using debouncing
+
     const timer = setTimeout(async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_URL}/api/geocode?q=${query}`,
-        {
-          method: "GET",
-        },
       );
 
       const data = await res.json();
-
       setPlaces(data.places || []);
 
-      if (submit === "true" && places.length > 0) {
-        setOpen(false);
-        setSelectedPlace(places[0]);
+      if (submit === "true" && data.places?.length > 0) {
+        setSelectedPlaces([data.places[0]]);
         setMode("place-selected");
+        setOpen(false);
         return;
       }
 
@@ -58,31 +57,42 @@ export default function NavigationShell() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, submit]);
+  }, [query, submit, setSelectedPlaces]);
 
-  function handleSearch(value: string) {}
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   function handlePlaceSelected(place: PlaceData) {
-    setSelectedPlace(place);
+    setSelectedPlaces([place]);
     setMode("place-selected");
     setOpen(false);
   }
 
   return (
     <>
-      <div className="relative">
+      <div ref={containerRef} className="relative">
         <SearchBar />
 
-        {/* //recomendations card */}
         {open && places.length > 0 && (
           <div className="absolute w-[380px] mt-2 rounded-lg border bg-background shadow-md z-50">
-            {places.map((place: PlaceData) => (
+            {places.map((place) => (
               <button
                 key={place.id}
-                onClick={() => {
-                  handlePlaceSelected(place);
-                  setOpen(false);
-                }}
+                onClick={() => handlePlaceSelected(place)}
                 className="w-full text-left px-4 py-2 hover:bg-muted transition"
               >
                 <div className="font-medium">{place.text}</div>
@@ -99,7 +109,7 @@ export default function NavigationShell() {
         <PlaceSidebar
           onShowDirections={() => setMode("routing")}
           onStartNavigation={() => setMode("navigating")}
-          place={selectedPlace}
+          place={selectedPlaces[0]}
         />
       )}
 
@@ -108,7 +118,6 @@ export default function NavigationShell() {
           isNavigating={mode === "navigating"}
           onStart={() => setMode("navigating")}
           onEnd={() => setMode("routing")}
-          onCollapse={() => setMode("idle")}
         />
       )}
     </>

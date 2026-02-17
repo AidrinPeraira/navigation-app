@@ -1,9 +1,12 @@
+import { PlaceData } from "@/types/DataType";
 import mapboxgl from "mapbox-gl";
 import { createContext, useContext } from "react";
 
 type MapContextType = {
   map: mapboxgl.Map | null;
   setMap: (map: mapboxgl.Map) => void;
+  selectedPlaces: PlaceData[];
+  setSelectedPlaces: (places: PlaceData[]) => void;
 };
 
 export const MapContext = createContext<MapContextType | null>(null);

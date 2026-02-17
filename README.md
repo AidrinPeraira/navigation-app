@@ -44,3 +44,6 @@
     - navigation shell reads it and makes api request to route.ts
     - it then renders the right component
     - two types of submit: 1. Select from suggestions, 2. Enter to show closest
+
+
+    - WE STORE THE MARKER DATA ALSO IN THE STATE TO MAKE IT AVAILABLE TO ALL COMPONENTS
