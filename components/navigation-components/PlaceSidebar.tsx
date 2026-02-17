@@ -1,15 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { PlaceData } from "@/types/DataType";
 
 type Props = {
   onShowDirections: () => void;
   onStartNavigation: () => void;
+  place: PlaceData | null;
 };
 
 export default function PlaceSidebar({
   onShowDirections,
   onStartNavigation,
+  place,
 }: Props) {
   return (
     <div
@@ -29,8 +32,8 @@ export default function PlaceSidebar({
       <h3 className="font-semibold">Selected Place</h3>
 
       <div>
-        <p className="text-sm font-medium">Place Name</p>
-        <p className="text-xs text-muted-foreground">Place address goes here</p>
+        <p className="text-sm font-medium">{place?.text}</p>
+        <p className="text-xs text-muted-foreground">{place?.place_name}</p>
       </div>
 
       <div className="flex gap-2 mt-2">

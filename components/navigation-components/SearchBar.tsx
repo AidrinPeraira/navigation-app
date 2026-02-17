@@ -20,6 +20,7 @@ export default function SearchBar() {
       params.delete("q");
     }
 
+    params.delete("submit");
     router.replace(`?${params.toString()}`, { scroll: false });
   }
 
@@ -32,6 +33,13 @@ export default function SearchBar() {
           placeholder="Search destination..."
           className="pl-9 bg-background/80 backdrop-blur-md border-white/10"
           onChange={(e) => handleSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("submit", "true");
+              router.replace(`?${params.toString()}`);
+            }
+          }}
         />
       </div>
 

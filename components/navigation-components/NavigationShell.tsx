@@ -18,20 +18,22 @@ export default function NavigationShell() {
   const [mode, setMode] = useState<UiMode>("idle");
   const [places, setPlaces] = useState<PlaceData[]>([]);
   const [open, setOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceData | null>(null);
 
   const params = useSearchParams();
   const query = params.get("q") ?? "";
+  const submit = params.get("submit");
 
   //reacting to search changes
   useEffect(() => {
     if (!query) {
       setPlaces([]);
+      setSelectedPlace(null);
       setOpen(false);
       return;
     }
 
     setMode("searching");
-
     //using debouncing
     const timer = setTimeout(async () => {
       const res = await fetch(
@@ -45,20 +47,25 @@ export default function NavigationShell() {
 
       setPlaces(data.places || []);
 
+      if (submit === "true" && places.length > 0) {
+        setOpen(false);
+        setSelectedPlace(places[0]);
+        setMode("place-selected");
+        return;
+      }
+
       setOpen(true);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
-    console.log("PLACES UPDATED:", places);
-  }, [places]);
+  }, [query, submit]);
 
   function handleSearch(value: string) {}
 
-  function handlePlaceSelected() {
+  function handlePlaceSelected(place: PlaceData) {
+    setSelectedPlace(place);
     setMode("place-selected");
+    setOpen(false);
   }
 
   return (
@@ -73,7 +80,7 @@ export default function NavigationShell() {
               <button
                 key={place.id}
                 onClick={() => {
-                  handlePlaceSelected();
+                  handlePlaceSelected(place);
                   setOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-muted transition"
@@ -92,6 +99,7 @@ export default function NavigationShell() {
         <PlaceSidebar
           onShowDirections={() => setMode("routing")}
           onStartNavigation={() => setMode("navigating")}
+          place={selectedPlace}
         />
       )}
 
