@@ -14,7 +14,7 @@ export default function MapContainer() {
    * we give that ref to map box map instance
    */
   const mapRef = useRef<HTMLDivElement>(null);
-  const { setMap, map, selectedPlaces } = useMapbox();
+  const { setMap, map, selectedPlaces, setSelectedPlaces } = useMapbox();
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { theme } = useTheme();
 
@@ -55,6 +55,10 @@ export default function MapContainer() {
       const marker = new mapboxgl.Marker({ color: "#3b82f6" })
         .setLngLat([place.lng, place.lat]) // [lng, lat]
         .addTo(map);
+
+      marker.getElement().addEventListener("click", () => {
+        setSelectedPlaces([place, ...selectedPlaces]);
+      });
 
       markersRef.current.push(marker);
     });

@@ -5,6 +5,7 @@ import { createContext, useContext } from "react";
 type MapContextType = {
   map: mapboxgl.Map | null;
   setMap: (map: mapboxgl.Map) => void;
+
   selectedPlaces: PlaceData[];
   setSelectedPlaces: (places: PlaceData[]) => void;
 };
