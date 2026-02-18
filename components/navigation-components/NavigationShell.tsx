@@ -47,7 +47,7 @@ export default function NavigationShell() {
       setPlaces(data.places || []);
 
       if (submit === "true" && data.places?.length > 0) {
-        setSelectedPlaces([data.places[0]]);
+        setSelectedPlaces(data.places);
         setMode("place-selected");
         setOpen(false);
         return;
