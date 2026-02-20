@@ -47,3 +47,9 @@
 
 
     - WE STORE THE MARKER DATA ALSO IN THE STATE TO MAKE IT AVAILABLE TO ALL COMPONENTS
+
+# Handling the routing
+
+    - when a place is selected and we click directions we get directions from current location to the selected as a path
+    - we add this to the context. so that all components can access it
+    -

@@ -9,12 +9,14 @@ type Props = {
   onShowDirections: () => void;
   onStartNavigation: () => void;
   place: PlaceData | null;
+  isLoading: boolean;
 };
 
 export default function PlaceSidebar({
   onShowDirections,
   onStartNavigation,
   place,
+  isLoading,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -64,8 +66,12 @@ export default function PlaceSidebar({
       </div>
 
       <div className="flex gap-2 mt-2">
-        <Button variant="outline" onClick={onShowDirections}>
-          Show Directions
+        <Button
+          variant="outline"
+          onClick={onShowDirections}
+          disabled={isLoading}
+        >
+          {isLoading ? "Finding routes..." : "Show Directions"}
         </Button>
 
         <Button onClick={onStartNavigation}>Start Navigation</Button>

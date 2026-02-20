@@ -19,8 +19,9 @@ export default function NavigationShell() {
   const [mode, setMode] = useState<UiMode>("idle");
   const [places, setPlaces] = useState<PlaceData[]>([]);
   const [open, setOpen] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
 
-  const { selectedPlaces, setSelectedPlaces } = useMapbox();
+  const { selectedPlaces, setSelectedPlaces, buildRoute } = useMapbox();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -107,9 +108,18 @@ export default function NavigationShell() {
 
       {mode === "place-selected" && (
         <PlaceSidebar
-          onShowDirections={() => setMode("routing")}
+          onShowDirections={async () => {
+            try {
+              setIsRouting(true);
+              await buildRoute();
+              setMode("routing");
+            } finally {
+              setIsRouting(false);
+            }
+          }}
           onStartNavigation={() => setMode("navigating")}
           place={selectedPlaces[0]}
+          isLoading={isRouting}
         />
       )}
 

@@ -7,3 +7,9 @@ export type PlaceData = {
   lat: number;
   type: string;
 };
+
+export type RouteInfo = {
+  distance: number;
+  duration: number;
+  geometry: GeoJSON.LineString;
+};
