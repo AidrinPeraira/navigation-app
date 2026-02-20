@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
+    console.log("Hit");
     const { searchParams } = new URL(req.url);
 
     const start = searchParams.get("start");

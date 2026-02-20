@@ -15,42 +15,40 @@ export default function MapProvider({ children }: Props) {
   const [route, setRoute] = useState<RouteInfo[]>([]);
   const [activeRoute, setActiveRoute] = useState<RouteInfo | null>(null);
 
+  function clearRoutes() {
+    setRoute([]);
+    setActiveRoute(null);
+
+    if (!map) return;
+    let i = 0;
+    while (map.getSource(`route-${i}`)) {
+      if (map.getLayer(`route-${i}`)) map.removeLayer(`route-${i}`);
+      map.removeSource(`route-${i}`);
+      i++;
+    }
+  }
+
   async function buildRoute(): Promise<void> {
     if (!map || selectedPlaces.length === 0) return;
 
     const destination = selectedPlaces[0];
 
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const start = `${pos.coords.longitude},${pos.coords.latitude}`;
-            const end = `${destination.lng},${destination.lat}`;
+    const position = await getCurrentPosition();
 
-            const res = await fetch(`/api/route?start=${start}&end=${end}`);
-            const data = await res.json();
+    const start = `${position.coords.longitude},${position.coords.latitude}`;
+    const end = `${destination.lng},${destination.lat}`;
 
-            const best = data.routes?.[0];
-            if (!best) {
-              reject("No routes found");
-              return;
-            }
+    const res = await fetch(`/api/route?start=${start}&end=${end}`);
+    const data = await res.json();
 
-            setRoute(data.routes);
-            setActiveRoute(best);
+    const best = data.routes?.[0];
+    if (!best) throw new Error("No routes found");
 
-            drawRoute(data.routes, best);
+    setRoute(data.routes);
+    setActiveRoute(best);
 
-            fitMapToRoute(best.geometry);
-
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        },
-        (err) => reject(err),
-      );
-    });
+    drawRoute(data.routes, best);
+    fitMapToRoute(best.geometry);
   }
 
   function drawRoute(routes: RouteInfo[], active: RouteInfo) {
@@ -88,6 +86,16 @@ export default function MapProvider({ children }: Props) {
     });
   }
 
+  function getCurrentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: 10_000,
+        maximumAge: 60_000,
+      });
+    });
+  }
+
   function fitMapToRoute(geometry: GeoJSON.LineString) {
     if (!map) return;
 
@@ -115,6 +123,7 @@ export default function MapProvider({ children }: Props) {
         activeRoute,
         setActiveRoute,
         buildRoute,
+        clearRoutes,
       }}
     >
       {children}

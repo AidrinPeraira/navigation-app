@@ -28,6 +28,7 @@ export default function NavigationShell() {
     route,
     activeRoute,
     setActiveRoute,
+    clearRoutes,
   } = useMapbox();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,7 @@ export default function NavigationShell() {
     }
 
     setMode("searching");
+    clearRoutes();
 
     const timer = setTimeout(async () => {
       const res = await fetch(
@@ -118,7 +120,7 @@ export default function NavigationShell() {
           onShowDirections={async () => {
             try {
               setIsRouting(true);
-              buildRoute();
+              await buildRoute();
               setMode("routing");
             } finally {
               setIsRouting(false);
