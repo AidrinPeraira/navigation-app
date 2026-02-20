@@ -14,7 +14,14 @@ export default function MapContainer() {
    * we give that ref to map box map instance
    */
   const mapRef = useRef<HTMLDivElement>(null);
-  const { setMap, map, selectedPlaces, setSelectedPlaces } = useMapbox();
+  const {
+    setMap,
+    map,
+    selectedPlaces,
+    setSelectedPlaces,
+    route,
+    setActiveRoute,
+  } = useMapbox();
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { theme } = useTheme();
 
@@ -60,6 +67,45 @@ export default function MapContainer() {
 
     return () => mapInstance.remove();
   }, [setMap, theme]);
+
+  // Click-to-select route on the map
+  useEffect(() => {
+    if (!map || route.length === 0) return;
+
+    const handlers: {
+      id: string;
+      click: () => void;
+      enter: () => void;
+      leave: () => void;
+    }[] = [];
+
+    route.forEach((r, index) => {
+      const id = `route-${index}`;
+      if (!map.getLayer(id)) return;
+
+      const onClick = () => setActiveRoute(r);
+      const onEnter = () => {
+        map.getCanvas().style.cursor = "pointer";
+      };
+      const onLeave = () => {
+        map.getCanvas().style.cursor = "";
+      };
+
+      map.on("click", id, onClick);
+      map.on("mouseenter", id, onEnter);
+      map.on("mouseleave", id, onLeave);
+
+      handlers.push({ id, click: onClick, enter: onEnter, leave: onLeave });
+    });
+
+    return () => {
+      handlers.forEach(({ id, click, enter, leave }) => {
+        map.off("click", id, click);
+        map.off("mouseenter", id, enter);
+        map.off("mouseleave", id, leave);
+      });
+    };
+  }, [map, route, setActiveRoute]);
 
   // Render markers
   useEffect(() => {

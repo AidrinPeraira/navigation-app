@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { MapContext } from "@/components/navigation-context/map-context";
 import { PlaceData, RouteInfo } from "@/types/DataType";
@@ -56,6 +56,7 @@ export default function MapProvider({ children }: Props) {
 
     routes.forEach((route, index) => {
       const id = `route-${index}`;
+      const isActive = route === active;
 
       const feature: GeoJSON.Feature<GeoJSON.LineString> = {
         type: "Feature",
@@ -65,26 +66,52 @@ export default function MapProvider({ children }: Props) {
 
       if (map.getSource(id)) {
         (map.getSource(id) as mapboxgl.GeoJSONSource).setData(feature);
-        return;
+      } else {
+        map.addSource(id, {
+          type: "geojson",
+          data: feature,
+        });
+
+        map.addLayer({
+          id,
+          type: "line",
+          source: id,
+          paint: {
+            "line-color": "#9ca3af",
+            "line-width": 3,
+            "line-opacity": 0.6,
+          },
+        });
       }
 
-      map.addSource(id, {
-        type: "geojson",
-        data: feature,
-      });
-
-      map.addLayer({
-        id,
-        type: "line",
-        source: id,
-        paint: {
-          "line-color": route === active ? "#3b82f6" : "#9ca3af",
-          "line-width": route === active ? 5 : 3,
-          "line-opacity": route === active ? 1 : 0.6,
-        },
-      });
+      // Always apply active/inactive styles
+      map.setPaintProperty(id, "line-color", isActive ? "#3b82f6" : "#9ca3af");
+      map.setPaintProperty(id, "line-width", isActive ? 5 : 3);
+      map.setPaintProperty(id, "line-opacity", isActive ? 1 : 0.6);
     });
   }
+
+  const selectRoute = useCallback(
+    (selected: RouteInfo | null) => {
+      setActiveRoute(selected);
+      if (!map || !selected || route.length === 0) return;
+
+      // Re-style all route layers based on which is now active
+      route.forEach((r, index) => {
+        const id = `route-${index}`;
+        if (!map.getLayer(id)) return;
+        const isActive = r === selected;
+        map.setPaintProperty(
+          id,
+          "line-color",
+          isActive ? "#3b82f6" : "#9ca3af",
+        );
+        map.setPaintProperty(id, "line-width", isActive ? 5 : 3);
+        map.setPaintProperty(id, "line-opacity", isActive ? 1 : 0.6);
+      });
+    },
+    [map, route],
+  );
 
   function getCurrentPosition(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
@@ -121,7 +148,7 @@ export default function MapProvider({ children }: Props) {
         route,
         setRoute,
         activeRoute,
-        setActiveRoute,
+        setActiveRoute: selectRoute,
         buildRoute,
         clearRoutes,
       }}
