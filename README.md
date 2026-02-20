@@ -52,4 +52,8 @@
 
     - when a place is selected and we click directions we get directions from current location to the selected as a path
     - we add this to the context. so that all components can access it
-    -
+    - we take the current location from the navigation web api. and use that to find routes between current location and selected location
+    - we add the routes to contex
+    - we render the routes using the map instance and add an onclick listener to the route lines to handle route selection
+
+# Handling adding stops

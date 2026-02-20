@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { MapContext } from "@/components/navigation-context/map-context";
 import { PlaceData, RouteInfo } from "@/types/DataType";
@@ -14,6 +14,49 @@ export default function MapProvider({ children }: Props) {
 
   const [route, setRoute] = useState<RouteInfo[]>([]);
   const [activeRoute, setActiveRoute] = useState<RouteInfo | null>(null);
+  const [stops, setStops] = useState<PlaceData[]>([]);
+  const [previewPlace, setPreviewPlace] = useState<PlaceData | null>(null);
+  const [originPlace, setOriginPlace] = useState<PlaceData | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Continuously cache the user's position so it's available instantly
+  const cachedPositionRef = useRef<GeolocationCoordinates | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        cachedPositionRef.current = pos.coords;
+        // Clear any previous error since we now have a fix
+        setLocationError(null);
+      },
+      () => {
+        // Silently ignore watch errors — we have fallbacks
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 30_000,
+      },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  const destination = selectedPlaces.length > 0 ? selectedPlaces[0] : null;
+  const origin = originPlace ? originPlace.text : "My Location";
+
+  function setDestination(place: PlaceData) {
+    setSelectedPlaces([place]);
+  }
+
+  function addStop(place: PlaceData) {
+    setStops((prev) => [...prev, place]);
+  }
+
+  function removeStop(index: number) {
+    setStops((prev) => prev.filter((_, i) => i !== index));
+  }
 
   function clearRoutes() {
     setRoute([]);
@@ -28,17 +71,44 @@ export default function MapProvider({ children }: Props) {
     }
   }
 
-  async function buildRoute(): Promise<void> {
-    if (!map || selectedPlaces.length === 0) return;
+  async function buildRoute(
+    stopsOverride?: PlaceData[],
+    originOverride?: PlaceData | null,
+  ): Promise<void> {
+    if (!map || !destination) return;
 
-    const destination = selectedPlaces[0];
+    clearRoutes();
 
-    const position = await getCurrentPosition();
+    const effectiveOrigin =
+      originOverride !== undefined ? originOverride : originPlace;
 
-    const start = `${position.coords.longitude},${position.coords.latitude}`;
+    let start: string;
+    if (effectiveOrigin) {
+      start = `${effectiveOrigin.lng},${effectiveOrigin.lat}`;
+    } else {
+      const coords = await resolveCurrentLocation();
+      if (!coords) {
+        setLocationError(
+          "Could not determine your location. Please set an origin manually.",
+        );
+        return;
+      }
+      setLocationError(null);
+      start = `${coords.longitude},${coords.latitude}`;
+    }
+
     const end = `${destination.lng},${destination.lat}`;
 
-    const res = await fetch(`/api/route?start=${start}&end=${end}`);
+    // Use override if provided (avoids stale closure), otherwise use current state
+    const currentStops = stopsOverride ?? stops;
+    const waypointsParam =
+      currentStops.length > 0
+        ? `&waypoints=${currentStops.map((s) => `${s.lng},${s.lat}`).join(";")}`
+        : "";
+
+    const res = await fetch(
+      `/api/route?start=${start}&end=${end}${waypointsParam}`,
+    );
     const data = await res.json();
 
     const best = data.routes?.[0];
@@ -96,7 +166,6 @@ export default function MapProvider({ children }: Props) {
       setActiveRoute(selected);
       if (!map || !selected || route.length === 0) return;
 
-      // Re-style all route layers based on which is now active
       route.forEach((r, index) => {
         const id = `route-${index}`;
         if (!map.getLayer(id)) return;
@@ -113,12 +182,49 @@ export default function MapProvider({ children }: Props) {
     [map, route],
   );
 
-  function getCurrentPosition(): Promise<GeolocationPosition> {
+  /**
+   * Multi-strategy location resolver:
+   * 1. Use cached position from watchPosition (instant)
+   * 2. Try getCurrentPosition with low accuracy + short timeout
+   * 3. Retry with high accuracy + longer timeout
+   * Returns null if all strategies fail.
+   */
+  async function resolveCurrentLocation(): Promise<GeolocationCoordinates | null> {
+    // Strategy 1: Use cached position (instant)
+    if (cachedPositionRef.current) {
+      return cachedPositionRef.current;
+    }
+
+    // Strategy 2: Low accuracy, fast timeout
+    try {
+      const pos = await singlePositionRequest(false, 5_000, 60_000);
+      cachedPositionRef.current = pos.coords;
+      return pos.coords;
+    } catch {
+      // Fall through to retry
+    }
+
+    // Strategy 3: High accuracy, longer timeout
+    try {
+      const pos = await singlePositionRequest(true, 15_000, 0);
+      cachedPositionRef.current = pos.coords;
+      return pos.coords;
+    } catch (error) {
+      console.error("All geolocation strategies failed", error);
+      return null;
+    }
+  }
+
+  function singlePositionRequest(
+    highAccuracy: boolean,
+    timeout: number,
+    maximumAge: number,
+  ): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: false,
-        timeout: 10_000,
-        maximumAge: 60_000,
+        enableHighAccuracy: highAccuracy,
+        timeout,
+        maximumAge,
       });
     });
   }
@@ -149,6 +255,18 @@ export default function MapProvider({ children }: Props) {
         setRoute,
         activeRoute,
         setActiveRoute: selectRoute,
+        origin,
+        originPlace,
+        setOriginPlace,
+        destination,
+        setDestination,
+        stops,
+        addStop,
+        removeStop,
+        previewPlace,
+        setPreviewPlace,
+        locationError,
+        setLocationError,
         buildRoute,
         clearRoutes,
       }}

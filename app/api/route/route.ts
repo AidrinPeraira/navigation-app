@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    console.log("Hit");
     const { searchParams } = new URL(req.url);
 
     const start = searchParams.get("start");
     const end = searchParams.get("end");
+    const waypoints = searchParams.get("waypoints"); // optional: "lng,lat;lng,lat"
 
     if (!start || !end) {
       return NextResponse.json(
@@ -24,9 +24,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Build coordinate string: start;wp1;wp2;...;end
+    const coords = waypoints
+      ? `${start};${waypoints};${end}`
+      : `${start};${end}`;
+
+    // Mapbox disables alternatives when waypoints are present
+    const alternatives = waypoints ? "false" : "true";
+
     const mapboxRes = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${start};${end}` +
-        `?alternatives=true&geometries=geojson&overview=full&access_token=${token}`,
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}` +
+        `?alternatives=${alternatives}&geometries=geojson&overview=full&access_token=${token}`,
     );
 
     if (!mapboxRes.ok) {

@@ -15,7 +15,27 @@ type MapContextType = {
   activeRoute: RouteInfo | null;
   setActiveRoute: (route: RouteInfo | null) => void;
 
-  buildRoute: () => Promise<void>;
+  origin: string;
+  originPlace: PlaceData | null;
+  setOriginPlace: (place: PlaceData | null) => void;
+
+  destination: PlaceData | null;
+  setDestination: (place: PlaceData) => void;
+
+  stops: PlaceData[];
+  addStop: (place: PlaceData) => void;
+  removeStop: (index: number) => void;
+
+  previewPlace: PlaceData | null;
+  setPreviewPlace: (place: PlaceData | null) => void;
+
+  locationError: string | null;
+  setLocationError: (error: string | null) => void;
+
+  buildRoute: (
+    stopsOverride?: PlaceData[],
+    originOverride?: PlaceData | null,
+  ) => Promise<void>;
   clearRoutes: () => void;
 };
 

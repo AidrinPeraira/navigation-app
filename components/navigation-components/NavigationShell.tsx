@@ -21,15 +21,8 @@ export default function NavigationShell() {
   const [open, setOpen] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
 
-  const {
-    selectedPlaces,
-    setSelectedPlaces,
-    buildRoute,
-    route,
-    activeRoute,
-    setActiveRoute,
-    clearRoutes,
-  } = useMapbox();
+  const { selectedPlaces, setSelectedPlaces, buildRoute, clearRoutes } =
+    useMapbox();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -134,9 +127,6 @@ export default function NavigationShell() {
 
       {(mode === "routing" || mode === "navigating") && (
         <RouteSidebar
-          routes={route}
-          activeRoute={activeRoute}
-          onSelectRoute={(r) => setActiveRoute(r)}
           isNavigating={mode === "navigating"}
           onStart={() => setMode("navigating")}
           onEnd={() => setMode("routing")}
