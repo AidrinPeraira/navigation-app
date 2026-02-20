@@ -15,7 +15,7 @@ type MapContextType = {
   activeRoute: RouteInfo | null;
   setActiveRoute: (route: RouteInfo | null) => void;
 
-  buildRoute: () => void;
+  buildRoute: () => Promise<void>;
 };
 
 export const MapContext = createContext<MapContextType | null>(null);

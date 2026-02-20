@@ -39,7 +39,8 @@ export default function MapProvider({ children }: Props) {
             setRoute(data.routes);
             setActiveRoute(best);
 
-            drawRoute(best.geometry);
+            drawRoute(data.routes, best);
+
             fitMapToRoute(best.geometry);
 
             resolve();
@@ -52,35 +53,38 @@ export default function MapProvider({ children }: Props) {
     });
   }
 
-  function drawRoute(geometry: GeoJSON.LineString) {
+  function drawRoute(routes: RouteInfo[], active: RouteInfo) {
     if (!map) return;
 
-    if (map.getSource("route")) {
-      (map.getSource("route") as mapboxgl.GeoJSONSource).setData({
+    routes.forEach((route, index) => {
+      const id = `route-${index}`;
+
+      const feature: GeoJSON.Feature<GeoJSON.LineString> = {
         type: "Feature",
-        geometry,
+        geometry: route.geometry,
         properties: {},
+      };
+
+      if (map.getSource(id)) {
+        (map.getSource(id) as mapboxgl.GeoJSONSource).setData(feature);
+        return;
+      }
+
+      map.addSource(id, {
+        type: "geojson",
+        data: feature,
       });
-      return;
-    }
 
-    map.addSource("route", {
-      type: "geojson",
-      data: {
-        type: "Feature",
-        geometry,
-        properties: {},
-      },
-    });
-
-    map.addLayer({
-      id: "route-line",
-      type: "line",
-      source: "route",
-      paint: {
-        "line-color": "#3b82f6",
-        "line-width": 5,
-      },
+      map.addLayer({
+        id,
+        type: "line",
+        source: id,
+        paint: {
+          "line-color": route === active ? "#3b82f6" : "#9ca3af",
+          "line-width": route === active ? 5 : 3,
+          "line-opacity": route === active ? 1 : 0.6,
+        },
+      });
     });
   }
 

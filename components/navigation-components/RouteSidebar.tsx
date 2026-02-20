@@ -2,16 +2,28 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RouteInfo } from "@/types/DataType";
 import { Plus, ChevronLeft } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
+  routes: RouteInfo[];
+  activeRoute: RouteInfo | null;
+  onSelectRoute: (route: RouteInfo) => void;
+
   isNavigating: boolean;
   onStart: () => void;
   onEnd: () => void;
 };
 
-export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
+export default function RouteSidebar({
+  routes,
+  activeRoute,
+  onSelectRoute,
+  isNavigating,
+  onStart,
+  onEnd,
+}: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (

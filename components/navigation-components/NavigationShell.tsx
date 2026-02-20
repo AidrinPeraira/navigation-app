@@ -21,7 +21,14 @@ export default function NavigationShell() {
   const [open, setOpen] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
 
-  const { selectedPlaces, setSelectedPlaces, buildRoute } = useMapbox();
+  const {
+    selectedPlaces,
+    setSelectedPlaces,
+    buildRoute,
+    route,
+    activeRoute,
+    setActiveRoute,
+  } = useMapbox();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +118,7 @@ export default function NavigationShell() {
           onShowDirections={async () => {
             try {
               setIsRouting(true);
-              await buildRoute();
+              buildRoute();
               setMode("routing");
             } finally {
               setIsRouting(false);
@@ -125,6 +132,9 @@ export default function NavigationShell() {
 
       {(mode === "routing" || mode === "navigating") && (
         <RouteSidebar
+          routes={route}
+          activeRoute={activeRoute}
+          onSelectRoute={(r) => setActiveRoute(r)}
           isNavigating={mode === "navigating"}
           onStart={() => setMode("navigating")}
           onEnd={() => setMode("routing")}

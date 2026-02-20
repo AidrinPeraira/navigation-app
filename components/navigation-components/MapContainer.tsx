@@ -39,7 +39,25 @@ export default function MapContainer() {
 
     mapInstance.addControl(geolocate);
 
+    mapInstance.on("load", () => {
+      geolocate.trigger();
+    });
+
     setMap(mapInstance);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapInstance.flyTo({
+          center: [pos.coords.longitude, pos.coords.latitude],
+          zoom: 14,
+          essential: true,
+        });
+      },
+      () => {
+        console.warn("User denied geolocation");
+      },
+    );
+
     return () => mapInstance.remove();
   }, [setMap, theme]);
 
@@ -51,8 +69,10 @@ export default function MapContainer() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    selectedPlaces.forEach((place) => {
-      const marker = new mapboxgl.Marker({ color: "#3b82f6" })
+    selectedPlaces.forEach((place, index) => {
+      const marker = new mapboxgl.Marker({
+        color: `${index == 0 ? "#ac5d13ff" : "#3b82f6"}`,
+      })
         .setLngLat([place.lng, place.lat]) // [lng, lat]
         .addTo(map);
 

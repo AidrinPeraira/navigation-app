@@ -8,7 +8,11 @@ export async function GET(req: Request) {
   }
 
   const response = await fetch(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?proximity=ip&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&autocomplete=true&limit=5`,
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?` +
+      `country=IN&` +
+      `bbox=68,6,97,37&` +
+      `autocomplete=true&limit=5&` +
+      `access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`,
   );
 
   const data = await response.json();

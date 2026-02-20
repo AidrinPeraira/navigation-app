@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     }
 
     const mapboxRes = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${start};${end}?alternatives=true&geometries=geojson&overview=full&access_token=${token}`,
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${start};${end}` +
+        `?alternatives=true&geometries=geojson&overview=full&access_token=${token}`,
     );
 
     if (!mapboxRes.ok) {
@@ -41,11 +42,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Normalize to your RouteInfo type
-    const routes = data.routes.map((route: any) => ({
-      distance: route.distance,
-      duration: route.duration,
-      geometry: route.geometry,
-    }));
+    const routes = data.routes
+      .sort((a: any, b: any) => a.duration - b.duration)
+      .map((route: any) => ({
+        distance: route.distance,
+        duration: route.duration,
+        geometry: route.geometry,
+      }));
 
     return NextResponse.json({ routes });
   } catch (error) {
