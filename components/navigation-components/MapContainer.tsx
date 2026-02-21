@@ -12,6 +12,10 @@ const NAV_PITCH = 60;
 const NAV_ZOOM = 17;
 const OVERVIEW_PITCH = 0;
 const OVERVIEW_ZOOM_DELTA = -3; // step back from nav zoom when exiting nav
+const MAP_STYLES = {
+  light: "mapbox://styles/mapbox/light-v11",
+  dark: "mapbox://styles/mapbox/dark-v11",
+} as const;
 
 export default function MapContainer() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -44,7 +48,10 @@ export default function MapContainer() {
 
     const mapInstance = new mapboxgl.Map({
       container: mapRef.current,
-      style: `mapbox://styles/mapbox/${theme ?? "dark"}-v11`,
+      style:
+        theme && theme in MAP_STYLES
+          ? MAP_STYLES[theme as keyof typeof MAP_STYLES]
+          : MAP_STYLES.dark,
       center: [76.27, 9.93],
       zoom: 10,
       pitch: 0,

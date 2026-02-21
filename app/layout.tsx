@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Navi Pro",
+  title: "Nav Buddy",
   description: "Navigation app using next js and map box.",
 };
 
