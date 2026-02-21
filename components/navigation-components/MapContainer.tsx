@@ -58,7 +58,8 @@ export default function MapContainer() {
     });
 
     geolocateRef.current = geolocate;
-    mapInstance.addControl(geolocate);
+    // bottom-right keeps it away from sidebars; margin applied via CSS below
+    mapInstance.addControl(geolocate, "bottom-right");
 
     mapInstance.on("load", () => {
       geolocate.trigger();
@@ -250,12 +251,25 @@ export default function MapContainer() {
       {/* Map canvas */}
       <div ref={mapRef} className="absolute inset-0 w-full h-full" />
 
+      {/*
+        Push the Mapbox-injected geolocate button away from the bottom edge
+        so it sits clearly inside the map.
+        .mapboxgl-ctrl-bottom-right is the container Mapbox uses.
+      */}
+      <style>{`
+        .mapboxgl-ctrl-bottom-right {
+          bottom: 1.5rem !important;
+          right: 1rem !important;
+        }
+      `}</style>
+
       {/* ── Navigation heading arrow overlay ── */}
+      {/* Placed bottom-LEFT so it never overlaps the geolocate button (bottom-right) */}
       {isNavigating && (
         <div
           className="
             pointer-events-none
-            absolute bottom-8 right-6
+            absolute bottom-8 left-6
             z-20
             flex flex-col items-center gap-1
           "

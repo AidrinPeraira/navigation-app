@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   title: "Navi Pro",
   description: "Navigation app using next js and map box.",
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,21 +44,20 @@ export default function RootLayout({
         >
           <main
             className="
-            absolute
-            mx-auto
-            z-10
-            left-0 right-0 
-            w-[95vw]
-            sm:w-[90vw]
-            md:w-[720px]
-            lg:w-[960px]
-            xl:w-[1200px]
-            2xl:w-[1400px]
-          "
+              relative z-10
+              min-h-screen w-full
+              flex flex-col
+              items-center
+              justify-center
+              px-3 py-6
+              sm:px-6
+            "
           >
-            {children}
+            <HexagonBackground className="fixed inset-0 -z-10 min-h-screen ">
+              {children}
+            </HexagonBackground>
           </main>
-          <HexagonBackground className="min-h-screen" />
+
           <ModeToggle />
         </ThemeProvider>
       </body>

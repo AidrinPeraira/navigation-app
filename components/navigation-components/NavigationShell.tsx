@@ -99,11 +99,14 @@ export default function NavigationShell() {
 
   return (
     <>
-      <div ref={containerRef} className="relative">
+      <div
+        ref={containerRef}
+        className="relative w-full max-w-sm md:max-w-[380px]"
+      >
         <SearchBar />
 
         {open && places.length > 0 && (
-          <div className="absolute w-[380px] mt-2 rounded-lg border bg-background shadow-md z-50">
+          <div className="absolute w-full mt-2 rounded-lg border bg-background shadow-md z-50">
             {places.map((place) => (
               <button
                 key={place.id}
@@ -152,7 +155,7 @@ export default function NavigationShell() {
             // Route is already drawn; just enter navigation mode
             setMode("navigating");
           }}
-          onEnd={() => setMode("place-selected")}
+          onEnd={() => setMode("idle")}
         />
       )}
 

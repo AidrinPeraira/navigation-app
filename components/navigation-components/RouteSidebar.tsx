@@ -8,6 +8,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   MapPin,
   Navigation,
   Loader2,
@@ -33,6 +34,7 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
     setOriginPlace,
     destination,
     setDestination,
+    setSelectedPlaces,
     route,
     activeRoute,
     setActiveRoute,
@@ -40,6 +42,7 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
     addStop,
     removeStop,
     buildRoute,
+    clearRoutes,
     previewPlace,
     setPreviewPlace,
     locationError,
@@ -148,7 +151,6 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
         await buildRoute(undefined, place);
       } else if (target === "destination") {
         setDestination(place);
-        // Destination changed — need a tick for state to settle
         await new Promise((r) => setTimeout(r, 50));
         await buildRoute();
       } else if (target === "stop") {
@@ -182,6 +184,17 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
     }
   }
 
+  function handleCancel() {
+    closeSearch();
+    clearRoutes();
+    setSelectedPlaces([]);
+    setOriginPlace(null);
+    for (let i = stops.length - 1; i >= 0; i--) {
+      removeStop(i);
+    }
+    onEnd();
+  }
+
   function formatDuration(seconds: number): string {
     const mins = Math.round(seconds / 60);
     if (mins < 60) return `${mins} min`;
@@ -197,46 +210,9 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
 
   const currentResult = searchResults[carouselIndex];
 
-  return (
-    <div
-      className={`
-        fixed z-30
-        left-4 bottom-4
-        md:top-24 md:left-6 md:bottom-auto
-        w-[90vw] md:w-96
-        p-4
-        rounded-xl
-        bg-background/90 backdrop-blur-md
-        border border-white/10
-        shadow-xl
-        flex flex-col gap-3
-        transition-transform duration-300 ease-in-out
-        max-h-[80vh] overflow-y-auto
-
-        ${
-          collapsed
-            ? "translate-y-[calc(100%-3.5rem)] md:-translate-x-[calc(100%-3.5rem)]"
-            : "translate-x-0 translate-y-0"
-        }
-      `}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Route</h3>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label="Toggle panel"
-        >
-          <ChevronLeft
-            className={`h-4 w-4 transition-transform ${
-              collapsed ? "rotate-180 md:rotate-0" : "md:rotate-180"
-            }`}
-          />
-        </Button>
-      </div>
-
+  // ── Shared inner content ────────────────────────────────────────────────────
+  const inner = (
+    <>
       {/* Origin */}
       <div className="flex items-center gap-2">
         <Navigation className="h-4 w-4 shrink-0 text-blue-500" />
@@ -362,7 +338,6 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
             autoFocus
           />
 
-          {/* Loading */}
           {isSearching && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -370,10 +345,8 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
             </div>
           )}
 
-          {/* Carousel result card */}
           {!isSearching && searchResults.length > 0 && currentResult && (
             <div className="flex flex-col gap-2">
-              {/* Result card */}
               <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="h-4 w-4 text-green-500 shrink-0" />
@@ -386,7 +359,6 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
                 </p>
               </div>
 
-              {/* Navigation + Select */}
               <div className="flex items-center gap-2">
                 <Button
                   size="icon"
@@ -420,7 +392,6 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
             </div>
           )}
 
-          {/* No results */}
           {!isSearching && searchQuery && searchResults.length === 0 && (
             <p className="text-xs text-muted-foreground py-2">
               No places found
@@ -472,35 +443,130 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
 
       {/* Action Buttons */}
       {!isNavigating ? (
-        <Button
-          className="mt-2 gap-1.5"
-          disabled={isStarting || isRebuilding}
-          onClick={async () => {
-            try {
-              setIsStarting(true);
-              await onStart();
-            } finally {
-              setIsStarting(false);
-            }
-          }}
-        >
-          {isStarting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Starting...
-            </>
-          ) : (
-            <>
-              <Navigation className="h-4 w-4" />
-              Start Navigation
-            </>
-          )}
-        </Button>
+        <div className="mt-2 flex flex-col gap-2">
+          <Button
+            className="gap-1.5"
+            disabled={isStarting || isRebuilding}
+            onClick={async () => {
+              try {
+                setIsStarting(true);
+                await onStart();
+              } finally {
+                setIsStarting(false);
+              }
+            }}
+          >
+            {isStarting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Navigation className="h-4 w-4" />
+                Start Navigation
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-1.5 text-muted-foreground"
+            onClick={handleCancel}
+            disabled={isStarting || isRebuilding}
+          >
+            <X className="h-4 w-4" />
+            Cancel
+          </Button>
+        </div>
       ) : (
         <Button variant="destructive" onClick={onEnd}>
           End Navigation
         </Button>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Mobile: bottom action-bar drawer ── */}
+      <div
+        className={`
+          md:hidden
+          fixed z-30 bottom-0 left-0 right-0
+          bg-background/95 backdrop-blur-md
+          border-t border-white/10
+          shadow-2xl
+          flex flex-col
+          transition-transform duration-300 ease-in-out
+          max-h-[80vh]
+          ${collapsed ? "translate-y-[calc(100%-2.75rem)]" : "translate-y-0"}
+        `}
+      >
+        {/* Pull handle / header row */}
+        <button
+          className="flex items-center justify-between w-full px-4 h-11 shrink-0"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label="Toggle panel"
+        >
+          <span className="font-semibold text-sm">Route</span>
+          <ChevronUp
+            className={`h-4 w-4 transition-transform ${
+              collapsed ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Scrollable content */}
+        {!collapsed && (
+          <div className="px-4 pb-5 flex flex-col gap-3 overflow-y-auto">
+            {inner}
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop: left-side slide-out panel ── */}
+      <div
+        className={`
+          hidden md:flex
+          fixed z-30
+          top-24 left-0
+          w-96
+          flex-col gap-3
+          transition-transform duration-300 ease-in-out
+          ${collapsed ? "-translate-x-[calc(100%-2.75rem)]" : "translate-x-6"}
+        `}
+      >
+        <div
+          className="
+            flex flex-col gap-3
+            bg-background/90 backdrop-blur-md
+            border border-white/10
+            shadow-xl
+            rounded-xl
+            p-4
+            max-h-[80vh] overflow-y-auto
+          "
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Route</h3>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label="Toggle panel"
+            >
+              <ChevronLeft
+                className={`h-4 w-4 transition-transform ${
+                  collapsed ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+          </div>
+
+          {!collapsed && inner}
+        </div>
+      </div>
+    </>
   );
 }

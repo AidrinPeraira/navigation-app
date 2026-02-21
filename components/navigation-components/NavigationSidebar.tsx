@@ -5,6 +5,7 @@ import { PlaceData } from "@/types/DataType";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Navigation,
   MapPin,
   Clock,
@@ -133,15 +134,13 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [expandedLeg, setExpandedLeg] = useState<number | null>(0);
 
-  // All steps flattened for the simple single-leg view
   const allSteps: Step[] = navData?.legs.flatMap((l) => l.steps) ?? [];
 
-  // ── Fetch navigation data from the proxy ────────────────────────────────────
+  // ── Fetch navigation data ────────────────────────────────────────────────────
 
   const fetchNavigation = useCallback(async () => {
     if (!destination) return;
 
-    // Resolve start: prefer manual originPlace, fall back to live GPS coords
     const startCoords = originPlace
       ? { lng: originPlace.lng, lat: originPlace.lat }
       : currentCoords;
@@ -186,60 +185,15 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
     }
   }, [destination, originPlace, currentCoords, stops]);
 
-  // Fetch on mount (once when navigation starts)
   useEffect(() => {
     fetchNavigation();
   }, [fetchNavigation]);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Shared inner content ─────────────────────────────────────────────────────
 
-  return (
-    <div
-      className={`
-        fixed z-30
-        left-4 bottom-4
-        md:top-24 md:left-6 md:bottom-auto
-        w-[90vw] md:w-96
-        p-4
-        rounded-xl
-        bg-background/90 backdrop-blur-md
-        border border-white/10
-        shadow-xl
-        flex flex-col gap-3
-        transition-transform duration-300 ease-in-out
-        max-h-[80vh] overflow-y-auto
-
-        ${
-          collapsed
-            ? "translate-y-[calc(100%-3.5rem)] md:-translate-x-[calc(100%-3.5rem)]"
-            : "translate-x-0 translate-y-0"
-        }
-      `}
-    >
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Navigation className="h-4 w-4 text-blue-400" />
-          <h3 className="text-sm font-semibold">Navigation</h3>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setCollapsed((v) => !v)}
-            aria-label="Toggle panel"
-          >
-            <ChevronLeft
-              className={`h-4 w-4 transition-transform ${
-                collapsed ? "rotate-180 md:rotate-0" : "md:rotate-180"
-              }`}
-            />
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Destination label ── */}
+  const inner = (
+    <>
+      {/* Destination label */}
       {destination && (
         <div className="flex items-start gap-2 rounded-lg border border-white/10 bg-muted/30 p-3">
           <MapPin className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
@@ -252,7 +206,7 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
         </div>
       )}
 
-      {/* ── Loading ── */}
+      {/* Loading */}
       {isLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -260,7 +214,7 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
         </div>
       )}
 
-      {/* ── Error ── */}
+      {/* Error */}
       {error && !isLoading && (
         <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
           <AlertTriangle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
@@ -278,7 +232,7 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
         </div>
       )}
 
-      {/* ── ETA / Summary bar ── */}
+      {/* ETA / Summary bar */}
       {navData && !isLoading && (
         <div className="grid grid-cols-3 gap-2 rounded-lg border border-white/10 bg-muted/20 p-3">
           <div className="flex flex-col items-center gap-0.5">
@@ -307,18 +261,16 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
         </div>
       )}
 
-      {/* ── Turn-by-turn steps ── */}
+      {/* Turn-by-turn steps */}
       {navData && !isLoading && (
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Directions
           </span>
 
-          {/* Multi-leg: collapsible per leg */}
           {navData.legs.length > 1 ? (
             navData.legs.map((leg, legIdx) => (
               <div key={legIdx} className="rounded-lg border border-white/10">
-                {/* Leg header */}
                 <button
                   className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/30 transition"
                   onClick={() =>
@@ -341,7 +293,6 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
                   </div>
                 </button>
 
-                {/* Leg steps */}
                 {expandedLeg === legIdx && (
                   <div className="border-t border-white/10 flex flex-col divide-y divide-white/5">
                     {leg.steps.map((step, stepIdx) => (
@@ -352,7 +303,6 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
               </div>
             ))
           ) : (
-            /* Single leg — show steps directly */
             <div className="rounded-lg border border-white/10 flex flex-col divide-y divide-white/5">
               {allSteps.map((step, idx) => (
                 <StepRow key={idx} step={step} />
@@ -362,12 +312,105 @@ export default function NavigationSidebar({ onEnd, destination }: Props) {
         </div>
       )}
 
-      {/* ── End Navigation ── */}
+      {/* End Navigation */}
       <Button variant="destructive" className="mt-1 gap-2" onClick={onEnd}>
         <X className="h-4 w-4" />
         End Navigation
       </Button>
-    </div>
+    </>
+  );
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  return (
+    <>
+      {/* ── Mobile: bottom action-bar drawer ── */}
+      <div
+        className={`
+          md:hidden
+          fixed z-30 bottom-0 left-0 right-0
+          bg-background/95 backdrop-blur-md
+          border-t border-white/10
+          shadow-2xl
+          flex flex-col
+          transition-transform duration-300 ease-in-out
+          max-h-[80vh]
+          ${collapsed ? "translate-y-[calc(100%-2.75rem)]" : "translate-y-0"}
+        `}
+      >
+        {/* Pull handle / header row */}
+        <button
+          className="flex items-center justify-between w-full px-4 h-11 shrink-0"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label="Toggle panel"
+        >
+          <div className="flex items-center gap-2">
+            <Navigation className="h-4 w-4 text-blue-400" />
+            <span className="font-semibold text-sm">Navigation</span>
+          </div>
+          <ChevronUp
+            className={`h-4 w-4 transition-transform ${
+              collapsed ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Scrollable content */}
+        {!collapsed && (
+          <div className="px-4 pb-5 flex flex-col gap-3 overflow-y-auto">
+            {inner}
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop: left-side slide-out panel ── */}
+      <div
+        className={`
+          hidden md:flex
+          fixed z-30
+          top-24 left-0
+          w-96
+          flex-col gap-3
+          transition-transform duration-300 ease-in-out
+          ${collapsed ? "-translate-x-[calc(100%-2.75rem)]" : "translate-x-6"}
+        `}
+      >
+        <div
+          className="
+            flex flex-col gap-3
+            bg-background/90 backdrop-blur-md
+            border border-white/10
+            shadow-xl
+            rounded-xl
+            p-4
+            max-h-[80vh] overflow-y-auto
+          "
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Navigation className="h-4 w-4 text-blue-400" />
+              <h3 className="text-sm font-semibold">Navigation</h3>
+            </div>
+
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label="Toggle panel"
+            >
+              <ChevronLeft
+                className={`h-4 w-4 transition-transform ${
+                  collapsed ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+          </div>
+
+          {!collapsed && inner}
+        </div>
+      </div>
+    </>
   );
 }
 

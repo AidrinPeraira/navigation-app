@@ -7,22 +7,23 @@ import { Card } from "@/components/ui/card";
 export default function FloatingCard() {
   return (
     <MapProvider>
-      <div className="inline items-center justify-center h-screen md:min-h-screen p-2 md:p-6">
+      {/* Mobile: no padding, true full-screen. Desktop: centred padded card. */}
+      <div className="flex items-center justify-center h-[100dvh] md:min-h-screen md:p-6">
         <Card
           className="
-        relative 
-        w-full 
-        max-w-6xl 
-        /* Mobile: fill most of the screen height. Desktop: maintain 16/10 ratio */
-        h-[90vh] md:h-auto md:aspect-[16/10] 
-        overflow-hidden 
-        border-white/10 
-        bg-white/5 
-        backdrop-blur-xl 
-        shadow-2xl 
-        rounded-2xl"
+            relative
+            w-full
+            max-w-6xl
+            h-[100dvh] md:h-auto md:aspect-[16/10]
+            overflow-hidden
+            border-0 md:border md:border-white/10
+            bg-white/5
+            backdrop-blur-xl
+            shadow-2xl
+            rounded-none md:rounded-2xl
+          "
         >
-          <div className="absolute top-6 left-6 z-20">
+          <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-full max-w-sm md:max-w-[380px]">
             <NavigationShell />
           </div>
 
