@@ -7,6 +7,12 @@ import { useEffect, useRef } from "react";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+// Navigation mode constants
+const NAV_PITCH = 60;
+const NAV_ZOOM = 17;
+const OVERVIEW_PITCH = 0;
+const OVERVIEW_ZOOM_DELTA = -3; // step back from nav zoom when exiting nav
+
 export default function MapContainer() {
   const mapRef = useRef<HTMLDivElement>(null);
   const {
@@ -18,13 +24,21 @@ export default function MapContainer() {
     setActiveRoute,
     stops,
     previewPlace,
+    currentCoords,
+    isNavigating,
   } = useMapbox();
+
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const stopMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const previewMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const geolocateRef = useRef<mapboxgl.GeolocateControl | null>(null);
+
+  // Track latest heading from GeolocateControl events
+  const headingRef = useRef<number>(0);
+
   const { theme } = useTheme();
 
-  // Create map
+  // ── Create map ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -33,20 +47,28 @@ export default function MapContainer() {
       style: `mapbox://styles/mapbox/${theme ?? "dark"}-v11`,
       center: [76.27, 9.93],
       zoom: 10,
+      pitch: 0,
+      bearing: 0,
     });
 
     const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-      },
+      positionOptions: { enableHighAccuracy: true },
       trackUserLocation: true,
       showUserHeading: true,
     });
 
+    geolocateRef.current = geolocate;
     mapInstance.addControl(geolocate);
 
     mapInstance.on("load", () => {
       geolocate.trigger();
+    });
+
+    // Capture heading from geolocate events
+    geolocate.on("geolocate", (e: any) => {
+      if (e.coords?.heading != null) {
+        headingRef.current = e.coords.heading;
+      }
     });
 
     setMap(mapInstance);
@@ -67,7 +89,52 @@ export default function MapContainer() {
     return () => mapInstance.remove();
   }, [setMap, theme]);
 
-  // Click-to-select route on the map
+  // ── Navigation mode: tilt, follow heading ────────────────────────────────────
+  useEffect(() => {
+    if (!map) return;
+
+    if (isNavigating && currentCoords) {
+      // Fly to user position with pitch and heading-based bearing
+      map.flyTo({
+        center: [currentCoords.lng, currentCoords.lat],
+        zoom: NAV_ZOOM,
+        pitch: NAV_PITCH,
+        bearing: headingRef.current,
+        duration: 1200,
+        essential: true,
+      });
+
+      // Keep camera locked to user while navigating
+      const onGeolocate = (e: any) => {
+        if (!isNavigating) return;
+        const { longitude, latitude, heading } = e.coords;
+        headingRef.current = heading ?? headingRef.current;
+        map.easeTo({
+          center: [longitude, latitude],
+          bearing: headingRef.current,
+          pitch: NAV_PITCH,
+          duration: 500,
+          easing: (t) => t,
+        });
+      };
+
+      geolocateRef.current?.on("geolocate", onGeolocate);
+
+      return () => {
+        geolocateRef.current?.off("geolocate", onGeolocate);
+      };
+    } else {
+      // Exit navigation mode — reset to overview
+      map.flyTo({
+        pitch: OVERVIEW_PITCH,
+        bearing: 0,
+        zoom: Math.max(10, map.getZoom() + OVERVIEW_ZOOM_DELTA),
+        duration: 800,
+      });
+    }
+  }, [isNavigating, map, currentCoords]);
+
+  // ── Click-to-select route on the map ────────────────────────────────────────
   useEffect(() => {
     if (!map || route.length === 0) return;
 
@@ -106,7 +173,7 @@ export default function MapContainer() {
     };
   }, [map, route, setActiveRoute]);
 
-  // Render destination/selected place markers
+  // ── Destination / selected place markers ─────────────────────────────────────
   useEffect(() => {
     if (!map) return;
 
@@ -115,7 +182,7 @@ export default function MapContainer() {
 
     selectedPlaces.forEach((place, index) => {
       const marker = new mapboxgl.Marker({
-        color: `${index == 0 ? "#ef4444" : "#3b82f6"}`,
+        color: `${index === 0 ? "#ef4444" : "#3b82f6"}`,
       })
         .setLngLat([place.lng, place.lat])
         .addTo(map);
@@ -129,25 +196,17 @@ export default function MapContainer() {
 
     if (selectedPlaces.length === 1) {
       const selected = selectedPlaces[0];
-      map.flyTo({
-        center: [selected.lng, selected.lat],
-        zoom: 14,
-      });
+      map.flyTo({ center: [selected.lng, selected.lat], zoom: 14 });
     }
 
     if (selectedPlaces.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      selectedPlaces.forEach((place) => {
-        bounds.extend([place.lng, place.lat]);
-      });
-      map.fitBounds(bounds, {
-        padding: 80,
-        duration: 800,
-      });
+      selectedPlaces.forEach((place) => bounds.extend([place.lng, place.lat]));
+      map.fitBounds(bounds, { padding: 80, duration: 800 });
     }
   }, [selectedPlaces, map]);
 
-  // Render stop markers (amber)
+  // ── Stop markers (amber) ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!map) return;
 
@@ -158,16 +217,14 @@ export default function MapContainer() {
       const marker = new mapboxgl.Marker({ color: "#f59e0b" })
         .setLngLat([stop.lng, stop.lat])
         .addTo(map);
-
       stopMarkersRef.current.push(marker);
     });
   }, [stops, map]);
 
-  // Render preview marker (green) and pan to it
+  // ── Preview marker (green) ────────────────────────────────────────────────────
   useEffect(() => {
     if (!map) return;
 
-    // Remove previous preview marker
     if (previewMarkerRef.current) {
       previewMarkerRef.current.remove();
       previewMarkerRef.current = null;
@@ -188,5 +245,63 @@ export default function MapContainer() {
     }
   }, [previewPlace, map]);
 
-  return <div ref={mapRef} className="absolute inset-0 w-full h-full" />;
+  return (
+    <div className="absolute inset-0 w-full h-full">
+      {/* Map canvas */}
+      <div ref={mapRef} className="absolute inset-0 w-full h-full" />
+
+      {/* ── Navigation heading arrow overlay ── */}
+      {isNavigating && (
+        <div
+          className="
+            pointer-events-none
+            absolute bottom-8 right-6
+            z-20
+            flex flex-col items-center gap-1
+          "
+        >
+          {/* Compass / heading arrow */}
+          <div
+            className="
+              w-14 h-14
+              rounded-full
+              bg-background/80 backdrop-blur-sm
+              border border-white/20
+              shadow-xl
+              flex items-center justify-center
+            "
+            style={{ transform: `rotate(${headingRef.current}deg)` }}
+          >
+            {/* Arrow SVG — points "up" = direction of travel */}
+            <svg
+              viewBox="0 0 24 24"
+              className="w-8 h-8"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Tail */}
+              <path
+                d="M12 20V8"
+                stroke="#6b7280"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              {/* Head */}
+              <path
+                d="M7 12L12 4L17 12"
+                fill="#3b82f6"
+                stroke="#3b82f6"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <span className="text-[10px] font-medium text-white/70 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            Navigating
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }

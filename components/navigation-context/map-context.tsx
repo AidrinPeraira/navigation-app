@@ -19,6 +19,9 @@ type MapContextType = {
   originPlace: PlaceData | null;
   setOriginPlace: (place: PlaceData | null) => void;
 
+  /** Live GPS coordinates from watchPosition; null before first fix */
+  currentCoords: { lng: number; lat: number } | null;
+
   destination: PlaceData | null;
   setDestination: (place: PlaceData) => void;
 
@@ -31,6 +34,10 @@ type MapContextType = {
 
   locationError: string | null;
   setLocationError: (error: string | null) => void;
+
+  /** True while NavigationSidebar is the active mode */
+  isNavigating: boolean;
+  setIsNavigating: (v: boolean) => void;
 
   buildRoute: (
     stopsOverride?: PlaceData[],

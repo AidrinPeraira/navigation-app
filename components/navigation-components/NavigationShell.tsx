@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import SearchBar from "./SearchBar";
 import RouteSidebar from "./RouteSidebar";
 import PlaceSidebar from "./PlaceSidebar";
+import NavigationSidebar from "./NavigationSidebar";
 import { PlaceData } from "@/types/DataType";
 import { useSearchParams } from "next/navigation";
 import { useMapbox } from "@/components/navigation-context/map-context";
@@ -21,10 +22,21 @@ export default function NavigationShell() {
   const [open, setOpen] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
 
-  const { selectedPlaces, setSelectedPlaces, buildRoute, clearRoutes } =
-    useMapbox();
+  const {
+    selectedPlaces,
+    setSelectedPlaces,
+    buildRoute,
+    clearRoutes,
+    destination,
+    setIsNavigating,
+  } = useMapbox();
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync navigation mode into map context so MapContainer can react
+  useEffect(() => {
+    setIsNavigating(mode === "navigating");
+  }, [mode, setIsNavigating]);
 
   const params = useSearchParams();
   const query = params.get("q") ?? "";
@@ -119,16 +131,34 @@ export default function NavigationShell() {
               setIsRouting(false);
             }
           }}
-          onStartNavigation={() => setMode("navigating")}
+          onStartNavigation={async () => {
+            try {
+              setIsRouting(true);
+              await buildRoute();
+              setMode("navigating");
+            } finally {
+              setIsRouting(false);
+            }
+          }}
           place={selectedPlaces[0]}
           isLoading={isRouting}
         />
       )}
 
-      {(mode === "routing" || mode === "navigating") && (
+      {mode === "routing" && (
         <RouteSidebar
-          isNavigating={mode === "navigating"}
-          onStart={() => setMode("navigating")}
+          isNavigating={false}
+          onStart={async () => {
+            // Route is already drawn; just enter navigation mode
+            setMode("navigating");
+          }}
+          onEnd={() => setMode("place-selected")}
+        />
+      )}
+
+      {mode === "navigating" && (
+        <NavigationSidebar
+          destination={destination ?? selectedPlaces[0] ?? null}
           onEnd={() => setMode("routing")}
         />
       )}

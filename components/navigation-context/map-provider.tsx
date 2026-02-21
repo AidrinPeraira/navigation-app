@@ -18,6 +18,11 @@ export default function MapProvider({ children }: Props) {
   const [previewPlace, setPreviewPlace] = useState<PlaceData | null>(null);
   const [originPlace, setOriginPlace] = useState<PlaceData | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [currentCoords, setCurrentCoords] = useState<{
+    lng: number;
+    lat: number;
+  } | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Continuously cache the user's position so it's available instantly
   const cachedPositionRef = useRef<GeolocationCoordinates | null>(null);
@@ -28,6 +33,10 @@ export default function MapProvider({ children }: Props) {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         cachedPositionRef.current = pos.coords;
+        setCurrentCoords({
+          lng: pos.coords.longitude,
+          lat: pos.coords.latitude,
+        });
         // Clear any previous error since we now have a fix
         setLocationError(null);
       },
@@ -258,6 +267,7 @@ export default function MapProvider({ children }: Props) {
         origin,
         originPlace,
         setOriginPlace,
+        currentCoords,
         destination,
         setDestination,
         stops,
@@ -267,6 +277,8 @@ export default function MapProvider({ children }: Props) {
         setPreviewPlace,
         locationError,
         setLocationError,
+        isNavigating,
+        setIsNavigating,
         buildRoute,
         clearRoutes,
       }}

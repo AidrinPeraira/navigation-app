@@ -22,7 +22,7 @@ type SearchTarget = "origin" | "stop" | "destination";
 
 type Props = {
   isNavigating: boolean;
-  onStart: () => void;
+  onStart: () => void | Promise<void>;
   onEnd: () => void;
 };
 
@@ -47,6 +47,7 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
 
   const [collapsed, setCollapsed] = useState(false);
   const [isRebuilding, setIsRebuilding] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   // Carousel search state
   const [searchTarget, setSearchTarget] = useState<SearchTarget | null>(null);
@@ -471,8 +472,29 @@ export default function RouteSidebar({ isNavigating, onStart, onEnd }: Props) {
 
       {/* Action Buttons */}
       {!isNavigating ? (
-        <Button className="mt-2" onClick={onStart}>
-          Start Navigation
+        <Button
+          className="mt-2 gap-1.5"
+          disabled={isStarting || isRebuilding}
+          onClick={async () => {
+            try {
+              setIsStarting(true);
+              await onStart();
+            } finally {
+              setIsStarting(false);
+            }
+          }}
+        >
+          {isStarting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <Navigation className="h-4 w-4" />
+              Start Navigation
+            </>
+          )}
         </Button>
       ) : (
         <Button variant="destructive" onClick={onEnd}>

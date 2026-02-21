@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { PlaceData } from "@/types/DataType";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2, Navigation } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -70,11 +70,35 @@ export default function PlaceSidebar({
           variant="outline"
           onClick={onShowDirections}
           disabled={isLoading}
+          className="flex gap-1.5"
         >
-          {isLoading ? "Finding routes..." : "Show Directions"}
+          {isLoading ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Finding routes...
+            </>
+          ) : (
+            "Show Directions"
+          )}
         </Button>
 
-        <Button onClick={onStartNavigation}>Start Navigation</Button>
+        <Button
+          onClick={onStartNavigation}
+          disabled={isLoading}
+          className="flex gap-1.5"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <Navigation className="h-3.5 w-3.5" />
+              Start Navigation
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
