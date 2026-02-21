@@ -3,6 +3,7 @@ import MapContainer from "@/components/navigation-components/MapContainer";
 import NavigationShell from "@/components/navigation-components/NavigationShell";
 import MapProvider from "@/components/navigation-context/map-provider";
 import { Card } from "@/components/ui/card";
+import { Suspense } from "react";
 
 export default function FloatingCard() {
   return (
@@ -24,7 +25,15 @@ export default function FloatingCard() {
           "
         >
           <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-full max-w-sm md:max-w-[380px]">
-            <NavigationShell />
+            <Suspense
+              fallback={
+                <div className="relative w-full max-w-[250px] md:max-w-[380px] mx-2">
+                  <div className="h-10 rounded-md bg-white/10 animate-pulse" />
+                </div>
+              }
+            >
+              <NavigationShell />
+            </Suspense>
           </div>
 
           <div className="w-full h-full">
